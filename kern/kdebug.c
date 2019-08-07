@@ -2,6 +2,7 @@
 #include <inc/string.h>
 #include <inc/memlayout.h>
 #include <inc/assert.h>
+#include <inc/stdio.h>
 
 #include <kern/kdebug.h>
 
@@ -179,7 +180,11 @@ debuginfo_eip(uintptr_t addr, struct Eipdebuginfo *info)
 	//	Look at the STABS documentation and <inc/stab.h> to find
 	//	which one.
 	// Your code here.
-
+    stab_binsearch(stabs, &lline, &rline, N_SLINE, addr);
+    if (lline <= rline) {
+        // found the line number stab?
+        info->eip_line = stabs[lline].n_desc;
+    }
 
 	// Search backwards from the line number for the relevant filename
 	// stab.
