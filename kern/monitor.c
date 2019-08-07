@@ -24,6 +24,7 @@ struct Command {
 static struct Command commands[] = {
 	{ "help", "Display this list of commands", mon_help },
 	{ "kerninfo", "Display information about the kernel", mon_kerninfo },
+    { "backtrace", "Display the stack trace of the current context", mon_backtrace },
 };
 
 /***** Implementations of basic kernel monitor commands *****/
@@ -57,7 +58,33 @@ mon_kerninfo(int argc, char **argv, struct Trapframe *tf)
 int
 mon_backtrace(int argc, char **argv, struct Trapframe *tf)
 {
-	// Your code here.
+    int i;
+    struct Eipdebuginfo debug_info;
+    uint32_t curr_eip;
+    uint32_t *curr_ebp = (uint32_t*)read_ebp();
+    cprintf("Stack backtrace:\n");
+    while (curr_ebp != 0) {
+        curr_eip = curr_ebp[1];
+        cprintf("  ebp %08x  eip %08x args", curr_ebp, curr_eip);
+        for (i = 2; i < 7; i++) {
+            cprintf(" %08x", curr_ebp[i]);
+        }
+        cprintf("\n");
+
+        // get new debug info
+        // don't care about the return code since it should reset debug_info anyway
+        // and it'll panic if it really needs to
+        debuginfo_eip(curr_eip, &debug_info);
+
+        // print out debug info for this stack frame 
+        cprintf("\t\t%s:%d: %.*s+%u\n", debug_info.eip_file,
+                                        debug_info.eip_line,
+                                        debug_info.eip_fn_namelen, debug_info.eip_fn_name,
+                                        (uint32_t)(curr_eip - debug_info.eip_fn_addr));
+        // curr_ebp should point to the next base pointer
+        curr_ebp = (uint32_t*)*curr_ebp;
+    }
+    
 	return 0;
 }
 
