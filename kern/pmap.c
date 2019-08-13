@@ -164,10 +164,11 @@ mem_init(void)
 	// Your code goes here:
 
     // allocate space for PageInfo array 
-    pages = boot_alloc(npages * sizeof(struct PageInfo));
+    uint32_t pages_size = npages * sizeof(struct PageInfo);
 
+    pages = boot_alloc(pages_size);
     // set them all to 0
-    memset(pages, 0, npages * sizeof(struct PageInfo));
+    memset(pages, 0, pages_size);
 
 
 	//////////////////////////////////////////////////////////////////////
@@ -191,6 +192,8 @@ mem_init(void)
 	//      (ie. perm = PTE_U | PTE_P)
 	//    - pages itself -- kernel RW, user NONE
 	// Your code goes here:
+    // So this maps the page infos into a read only section of the virtual address space
+    boot_map_region(kern_pgdir, UPAGES, PTSIZE, PADDR(pages), PTE_U | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Use the physical memory that 'bootstack' refers to as the kernel
@@ -203,6 +206,7 @@ mem_init(void)
 	//       overwrite memory.  Known as a "guard page".
 	//     Permissions: kernel RW, user NONE
 	// Your code goes here:
+    boot_map_region(kern_pgdir, KSTACKTOP-KSTKSIZE, KSTKSIZE, PADDR(bootstack), PTE_W | PTE_P);
 
 	//////////////////////////////////////////////////////////////////////
 	// Map all of physical memory at KERNBASE.
@@ -212,6 +216,7 @@ mem_init(void)
 	// we just set up the mapping anyway.
 	// Permissions: kernel RW, user NONE
 	// Your code goes here:
+    boot_map_region(kern_pgdir, KERNBASE, 0xFFFFFFFF - KERNBASE + 1, 0x0, PTE_W | PTE_P);
 
 	// Check that the initial page directory has been set up correctly.
 	check_kern_pgdir();
@@ -454,26 +459,27 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-    pte_t *pt_entry;
+    pte_t *pte;
     uintptr_t curr_va;
     physaddr_t curr_pa;
+    int curr_idx;
     int i;
     for (i = 0; i < size; i += PGSIZE) {
         // where are we in virtual/physical memory?
         curr_va = va + i;
         curr_pa = pa + i;
 
-        // where's our page table?
-        pt_entry = pgdir_walk(pgdir, (void*)curr_va, PGDIR_WALK_CREATE);
-        if (pt_entry == NULL) {
+        // where's our page table entry?
+        pte = pgdir_walk(pgdir, (void*)curr_va, PGDIR_WALK_CREATE);
+        if (pte == NULL) {
             panic("boot_map_region: Ran out of space!!!\n");
         }
 
         // mark entry as present 
-        *pt_entry = perm | PTE_P;
+        *pte = perm | PTE_P;
 
         // set the upper 20 bits of the entry as the upper 20 bits of the physical address
-        *pt_entry |= PTE_ADDR(curr_pa);
+        *pte |= PTE_ADDR(curr_pa);
     }
 }
 
