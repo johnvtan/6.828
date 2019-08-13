@@ -180,7 +180,6 @@ mem_init(void)
 	check_page_free_list(1);
 	check_page_alloc();
 	check_page();
-    panic("VM not implemented\n");
 
 	//////////////////////////////////////////////////////////////////////
 	// Now we set up virtual memory
@@ -401,8 +400,44 @@ page_decref(struct PageInfo* pp)
 pte_t *
 pgdir_walk(pde_t *pgdir, const void *va, int create)
 {
-	// Fill this function in
-	return NULL;
+    // pde_t is just a uint32_t, which is an index into the kernel_pgdir
+    uintptr_t vaddr = (uint32_t)va;
+    pde_t pde = pgdir[PDX(vaddr)];
+    pte_t *pt_base;
+    if (PT_PRESENT(pde)) {
+        // page table is already allocated and present
+        // the page table base is the top 20 bits of the pgdir_entry
+        pt_base = (pte_t*)(KADDR(PTE_ADDR(pde)));
+    } else {
+        if (!create) {
+            return NULL;
+        }
+
+        // Allocate a zerod out page
+        struct PageInfo *pt_page_info = page_alloc(ALLOC_ZERO);
+        if (pt_page_info == NULL) {
+            cprintf("Error in pgdir_walk: Page alloc ran out of memory\n");
+            return NULL;
+        }
+
+        // increment the reference count
+        pt_page_info->pp_ref++;
+
+        // pt_base is a physical address here
+        pt_base = (pte_t*)page2pa(pt_page_info);
+
+        // Set very permissive bits to the pgdir
+        pgdir[PDX(vaddr)] = (PTE_P | PTE_W | PTE_U);
+
+        // the address we set in the pgdir is the physical address
+        pgdir[PDX(vaddr)] |= PTE_ADDR(pt_base); 
+
+        // make sure that pt_base is in the kernel address space
+        pt_base = (pte_t*)KADDR((uint32_t)pt_base);
+    }
+
+    uint32_t pt_idx = PTX(vaddr);
+	return &pt_base[pt_idx];
 }
 
 //
@@ -419,7 +454,27 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
 static void
 boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm)
 {
-	// Fill this function in
+    pte_t *pt_entry;
+    uintptr_t curr_va;
+    physaddr_t curr_pa;
+    int i;
+    for (i = 0; i < size; i += PGSIZE) {
+        // where are we in virtual/physical memory?
+        curr_va = va + i;
+        curr_pa = pa + i;
+
+        // where's our page table?
+        pt_entry = pgdir_walk(pgdir, (void*)curr_va, PGDIR_WALK_CREATE);
+        if (pt_entry == NULL) {
+            panic("boot_map_region: Ran out of space!!!\n");
+        }
+
+        // mark entry as present 
+        *pt_entry = perm | PTE_P;
+
+        // set the upper 20 bits of the entry as the upper 20 bits of the physical address
+        *pt_entry |= PTE_ADDR(curr_pa);
+    }
 }
 
 //
@@ -450,7 +505,18 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-	// Fill this function in
+    // just always remove the page in the beginning
+    // this should(?) take care of invalidating the TLB
+    page_remove(pgdir, va);
+    pte_t *pt_entry = pgdir_walk(pgdir, va, PGDIR_WALK_CREATE);
+    if (pt_entry == NULL) {
+        cprintf("Failed to find a page table entry. Out of memory?\n");
+        return -E_NO_MEM;
+    }
+    // insertion succeeds
+    pp->pp_ref++;
+    *pt_entry = perm | PTE_P;
+    *pt_entry |= page2pa(pp);
 	return 0;
 }
 
@@ -468,8 +534,14 @@ page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 struct PageInfo *
 page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 {
-	// Fill this function in
-	return NULL;
+    pte_t *pt_entry = pgdir_walk(pgdir, va, 0);
+    if (pt_entry == NULL || !(PT_PRESENT(*pt_entry))) {
+        return NULL;
+    }
+    if (pte_store != NULL) {
+        *pte_store = pt_entry;
+    }
+    return pa2page(PTE_ADDR(*pt_entry));
 }
 
 //
@@ -490,7 +562,12 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-	// Fill this function in
+    struct PageInfo *page = page_lookup(pgdir, va, NULL);
+    if (page == NULL) {
+        return;
+    }
+    page_decref(page);
+    tlb_invalidate(pgdir, va);
 }
 
 //
@@ -766,6 +843,7 @@ check_page(void)
 	assert(check_va2pa(kern_pgdir, 0x0) == page2pa(pp1));
 	assert(pp1->pp_ref == 1);
 	assert(pp0->pp_ref == 1);
+    assert(pp2->pp_ref == 0);
 
 	// should be able to map pp2 at PGSIZE because pp0 is already allocated for page table
 	assert(page_insert(kern_pgdir, pp2, (void*) PGSIZE, PTE_W) == 0);
