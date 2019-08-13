@@ -505,19 +505,30 @@ boot_map_region(pde_t *pgdir, uintptr_t va, size_t size, physaddr_t pa, int perm
 int
 page_insert(pde_t *pgdir, struct PageInfo *pp, void *va, int perm)
 {
-    // just always remove the page in the beginning
-    // this should(?) take care of invalidating the TLB
-    page_remove(pgdir, va);
-    pte_t *pt_entry = pgdir_walk(pgdir, va, PGDIR_WALK_CREATE);
-    if (pt_entry == NULL) {
-        cprintf("Failed to find a page table entry. Out of memory?\n");
+    assert(pgdir != NULL);
+    assert(pp != NULL);
+
+    // get the page table entry 
+    pte_t *pte = pgdir_walk(pgdir, va, PGDIR_WALK_CREATE);
+    if (pte == NULL) {
         return -E_NO_MEM;
     }
-    // insertion succeeds
+
+    if (PT_PRESENT(*pte)) {
+        if (page2pa(pp) == PTE_ADDR(*pte)) {
+            // page is already mapped to the same va being requested so change permissions and return success
+            *pte = (page2pa(pp) | perm | PTE_P);
+            return 0;
+        }
+        // otherwise remove the old mapping
+        page_remove(pgdir, va);
+    }
+
+    // create the new entry and increment the ref count
+    *pte = (page2pa(pp) | perm | PTE_P);
     pp->pp_ref++;
-    *pt_entry = perm | PTE_P;
-    *pt_entry |= page2pa(pp);
-	return 0;
+    tlb_invalidate(pgdir, va);
+    return 0;
 }
 
 //
@@ -562,11 +573,15 @@ page_lookup(pde_t *pgdir, void *va, pte_t **pte_store)
 void
 page_remove(pde_t *pgdir, void *va)
 {
-    struct PageInfo *page = page_lookup(pgdir, va, NULL);
+    pte_t *pte;
+    struct PageInfo *page = page_lookup(pgdir, va, &pte);
     if (page == NULL) {
         return;
     }
     page_decref(page);
+
+    // set the pte to 0 to invalidate the entry
+    *pte = 0;
     tlb_invalidate(pgdir, va);
 }
 
