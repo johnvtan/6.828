@@ -75,6 +75,12 @@
 // Address in page table or page directory entry
 #define PTE_ADDR(pte)	((physaddr_t) (pte) & ~0xFFF)
 
+// macros for checking page directory entries
+#define PT_PRESENT(entry) (entry & PTE_P)
+#define PT_DIRTY(entry) (entry & PTE_D)
+#define PT_RW(entry) (entry & PTE_W)
+#define PT_US(entry) (entry & PTE_U)
+
 // Control Register flags
 #define CR0_PE		0x00000001	// Protection Enable
 #define CR0_MP		0x00000002	// Monitor coProcessor
