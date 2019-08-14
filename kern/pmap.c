@@ -135,6 +135,19 @@ mem_init(void)
 	uint32_t cr0;
 	size_t n;
 
+	kern_pgdir = (pde_t *) boot_alloc(PGSIZE);
+    /*
+     * Testing physical memory access
+    *kern_pgdir = 0xDEADBEEF;
+
+    cprintf("\n\n");
+    cprintf("Virtual Address of kern_pgdir is: %x\n", (uint32_t)kern_pgdir);
+    cprintf("value at kern_pgdir is: %x\n", *kern_pgdir);
+    physaddr_t kern_pgdir_phys = PADDR(kern_pgdir);
+    cprintf("Phys Addr of kern_pgdir is: %x\n", kern_pgdir_phys);
+    cprintf("value at phys kern_pgdir is: %x\n", *(uint32_t*)kern_pgdir_phys);
+    cprintf("\n\n");
+    */
 	// Find out how much memory the machine has (npages & npages_basemem).
 	i386_detect_memory();
 
@@ -143,7 +156,6 @@ mem_init(void)
 
 	//////////////////////////////////////////////////////////////////////
 	// create initial page directory.
-	kern_pgdir = (pde_t *) boot_alloc(PGSIZE);
 	memset(kern_pgdir, 0, PGSIZE);
 
 	//////////////////////////////////////////////////////////////////////
