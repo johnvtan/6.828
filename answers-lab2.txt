@@ -35,4 +35,12 @@ The operating system reserves all memory above 0xF0000000 for itself. Since the 
 space is 0xFFFFFFFF, the OS can be no larger than (0xFFFFFFFF - 0xF0000000) bytes, or ~268MB.
 
 ## Question 4
+With 268MB=0x1000000 of RAM reserved for the OS split into 4096=0x1000 byte pages, we get 0x1000000/0x1000 = 0x10000
+or 65536 page frames. We would need an array of PageInfo structs, which are each 8 bytes. We would also need a page
+entry for each of the page frames, each of which occupy 4 bytes. Finally, we would also need to allocate a page
+directory which itself is 4096 bytes. So in total, we would need (8+4)*65536 + 4096 = 790528 bytes.
 
+## Question 5
+The code in entry.S continues using a low memory address. We transition to addresses above KERNBASE when we jump to C
+code, since that code is linked to a high memory address - in kernel.ld, it is specified that the kernel begins at
+address 0xF0100000.
