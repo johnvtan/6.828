@@ -116,7 +116,7 @@ env_init(void)
 {
 	// Set up envs array
 	// LAB 3: Your code here.
-
+    cprintf("env init\n");
     int i;
     struct Env curr_env;
     for (i = 0; i < NENV; i++) {
@@ -176,6 +176,7 @@ env_init_percpu(void)
 static int
 env_setup_vm(struct Env *e)
 {
+    cprintf("env_setup_vm\n");
 	int i;
 	struct PageInfo *p = NULL;
 
@@ -292,6 +293,7 @@ env_alloc(struct Env **newenv_store, envid_t parent_id)
 static void
 region_alloc(struct Env *e, void *va, size_t len)
 {
+    cprintf("region alloc\n");
 	// LAB 3: Your code here.
 	// (But only if you need it for load_icode.)
 	//
@@ -318,6 +320,7 @@ region_alloc(struct Env *e, void *va, size_t len)
             panic("region_alloc error: Page_insert returned %e", err);
         }
     }
+    cprintf("region alloc done\n");
 }
 
 //
@@ -345,6 +348,7 @@ region_alloc(struct Env *e, void *va, size_t len)
 static void
 load_icode(struct Env *e, uint8_t *binary)
 {
+    cprintf("load_icode\n");
 	// Hints:
 	//  Load each program segment into virtual memory
 	//  at the address specified in the ELF segment header.
@@ -419,6 +423,7 @@ load_icode(struct Env *e, uint8_t *binary)
 
     // then switch back to kern_pgdir at the conclusion of this function
     lcr3(PADDR(kern_pgdir));
+    cprintf("load icode done\n");
 }
 
 //
@@ -431,6 +436,7 @@ load_icode(struct Env *e, uint8_t *binary)
 void
 env_create(uint8_t *binary, enum EnvType type)
 {
+    cprintf("env_create\n");
 	// LAB 3: Your code here.
     struct Env *first_env = NULL;
     int err = env_alloc(&first_env, 0);
@@ -439,6 +445,7 @@ env_create(uint8_t *binary, enum EnvType type)
     }
     first_env->env_type = type;
     load_icode(first_env, binary);
+    cprintf("env_create done\n");
 }
 
 //
@@ -555,6 +562,7 @@ env_run(struct Env *e)
 	//	e->env_tf to sensible values.
 
 	// LAB 3: Your code here.
+    cprintf("env run\n");
     assert(e != NULL);
     if (curenv != NULL) {
         curenv->env_status = ENV_RUNNABLE;
