@@ -43,13 +43,59 @@
 
 .text
 
+
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
-
-
+TRAPHANDLER_NOEC(divide_error_trap, T_DIVIDE)
+TRAPHANDLER_NOEC(debug_trap, T_DEBUG)
+TRAPHANDLER_NOEC(nmi_trap, T_NMI)
+TRAPHANDLER_NOEC(breakpoint_trap, T_BRKPT)
+TRAPHANDLER_NOEC(overflow_trap, T_OFLOW)
+TRAPHANDLER_NOEC(bound_trap, T_BOUND)
+TRAPHANDLER_NOEC(invalid_opcode_trap, T_ILLOP)
+TRAPHANDLER_NOEC(no_device_trap, T_DEVICE)
+TRAPHANDLER(double_fault_trap, T_DBLFLT)
+//TRAPHANDLER_NOEC(coproc_overrun_trap, 9)
+TRAPHANDLER(invalid_tss_trap, T_TSS)
+TRAPHANDLER(seg_not_present_trap, T_SEGNP)
+TRAPHANDLER(stack_trap, T_STACK)
+TRAPHANDLER(gp_trap, T_GPFLT)
+TRAPHANDLER(page_fault_trap, T_PGFLT)
+//TRAPHANDLER(reserved1_trap, 15)
+TRAPHANDLER_NOEC(floating_point_trap, T_FPERR)
+TRAPHANDLER(align_check_trap, T_ALIGN)
+TRAPHANDLER_NOEC(machine_check_trap, T_MCHK)
+TRAPHANDLER_NOEC(simd_trap, T_SIMDERR)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+// I should already be on the kernel stack right?
+_alltraps:
+    /* 
+     * Stack should already have:
+     *   - SS
+     *   - ESP
+     *   - EFLAGS
+     *   - CS
+     *   - EIP
+     *   - err (or 0 if trap doesn't do error codes)
+     */
+
+    // push ds, es
+    pushl %ds
+    pushl %es
+
+    // pushes a bunch of regs
+    pushal
+
+    // load GD_KD into ds, es
+    movw $GD_KD, %ax
+    movw %ax, %es
+    movw %ax, %ds
+
+    // pass Trapframe as a parameter to trap
+    pushl %esp
+    call trap

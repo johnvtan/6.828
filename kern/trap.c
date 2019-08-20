@@ -65,8 +65,29 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+    SETGATE(idt[T_DIVIDE], GATEDESC_TRAP, GD_KT, divide_error_trap, 0);
+    SETGATE(idt[T_DEBUG], GATEDESC_TRAP, GD_KT, debug_trap, 0);
+    SETGATE(idt[T_NMI], GATEDESC_INT, GD_KT, nmi_trap, 0);
 
-	// Per-CPU setup 
+    // used to let user programs set breakpoints?
+    SETGATE(idt[T_BRKPT], GATEDESC_TRAP, GD_KT, breakpoint_trap, 3);
+
+    SETGATE(idt[T_OFLOW], GATEDESC_TRAP, GD_KT, overflow_trap, 0);
+    SETGATE(idt[T_BOUND], GATEDESC_TRAP, GD_KT, bound_trap, 0);
+    SETGATE(idt[T_ILLOP], GATEDESC_TRAP, GD_KT, invalid_opcode_trap, 0);
+    SETGATE(idt[T_DEVICE], GATEDESC_TRAP, GD_KT, no_device_trap, 0);
+    SETGATE(idt[T_DBLFLT], GATEDESC_TRAP, GD_KT, double_fault_trap, 0);
+    SETGATE(idt[T_TSS], GATEDESC_TRAP, GD_KT, invalid_tss_trap, 0);
+    SETGATE(idt[T_SEGNP], GATEDESC_TRAP, GD_KT, seg_not_present_trap, 0);
+    SETGATE(idt[T_STACK], GATEDESC_TRAP, GD_KT, stack_trap, 0);
+    SETGATE(idt[T_GPFLT], GATEDESC_TRAP, GD_KT, gp_trap, 0);
+    SETGATE(idt[T_PGFLT], GATEDESC_TRAP, GD_KT, page_fault_trap, 0);
+    SETGATE(idt[T_FPERR], GATEDESC_TRAP, GD_KT, floating_point_trap, 0);
+    SETGATE(idt[T_ALIGN], GATEDESC_TRAP, GD_KT, align_check_trap, 0);
+    SETGATE(idt[T_MCHK], GATEDESC_TRAP, GD_KT, machine_check_trap, 0);
+    SETGATE(idt[T_SIMDERR], GATEDESC_TRAP, GD_KT, simd_trap, 0);
+
+    // Per-CPU setup 
 	trap_init_percpu();
 }
 
@@ -145,6 +166,7 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
 
+    cprintf("Got trap!\n");
 	// Unexpected trap: The user process or the kernel has a bug.
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
