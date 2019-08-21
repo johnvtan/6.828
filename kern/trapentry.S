@@ -56,7 +56,7 @@ TRAPHANDLER_NOEC(bound_trap, T_BOUND)
 TRAPHANDLER_NOEC(invalid_opcode_trap, T_ILLOP)
 TRAPHANDLER_NOEC(no_device_trap, T_DEVICE)
 TRAPHANDLER(double_fault_trap, T_DBLFLT)
-//TRAPHANDLER_NOEC(coproc_overrun_trap, 9)
+//TRAPHANDLER_NOEC(coproc_overrun_trap, 
 TRAPHANDLER(invalid_tss_trap, T_TSS)
 TRAPHANDLER(seg_not_present_trap, T_SEGNP)
 TRAPHANDLER(stack_trap, T_STACK)

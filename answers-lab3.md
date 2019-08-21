@@ -1,9 +1,9 @@
 # Exercise 4
 ## Question 1
 There must be a handler for each exception/interrupt because there's no other way to differentiate between which
-interrupt occurred. The exception number isn't pushed onto the stack, so it would be difficult for a single generic
+interrupt occurred. The exception number isn't pushed onto the stack by the hw, so it would be difficult for a single generic
 handler to differentiate between e.g., a page fault and double fault where the exceptions require very different
-responses.
+responses. This is solved by the trap handling mechanism in JOS, since we manually push the trap number onto the stack.
 
 ## Question 2
 Because `softint` calls `int $14` from user mode, it will trigger a general protection fault since the interrupt gate
