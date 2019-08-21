@@ -167,6 +167,9 @@ trap_dispatch(struct Trapframe *tf)
 	// LAB 3: Your code here.
     // TODO - How do I get the trap number?
     switch (tf->tf_trapno) {
+        case T_BRKPT:
+            breakpoint_handler(tf);
+            break;
         case T_PGFLT:
             page_fault_handler(tf);
             break;
@@ -209,8 +212,7 @@ trap(struct Trapframe *tf)
 
 	// Record that tf is the last real trapframe so
 	// print_trapframe can print some additional information.
-	last_tf = tf;
-
+	last_tf = tf; 
 	// Dispatch based on what type of trap occurred
 	trap_dispatch(tf);
 
@@ -242,3 +244,17 @@ page_fault_handler(struct Trapframe *tf)
 	env_destroy(curenv);
 }
 
+// if called from user mode, run the JOS kernel monitor
+void
+breakpoint_handler(struct Trapframe *tf)
+{
+    // if we're in kernel mode, panic?
+    if ((tf->tf_cs & 3) != 3) {
+        panic("Breakpoint in the kernel!\n");
+    }
+
+    cprintf("User mode breakpoint exception - running JOS kernel monitor\n");
+
+    // TODO - Do I have to do something with the old environment (make a new env?)
+    monitor(tf);
+}
