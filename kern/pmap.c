@@ -660,7 +660,6 @@ user_mem_check(struct Env *env, const void *va, size_t len, int perm)
     // get range of pages that need to be checked
     uint32_t start_page = start & ~0xFFF;
     uint32_t end_page = end & ~0xFFF;
-    cprintf("Start addr: %u, end addr: %u, num_pages=%u\n", start, end, (start_page-end_page)/PGSIZE);
     uint32_t curr;
     pte_t *pte;
 
