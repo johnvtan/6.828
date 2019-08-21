@@ -87,6 +87,9 @@ trap_init(void)
     SETGATE(idt[T_MCHK], GATEDESC_TRAP, GD_KT, machine_check_trap, 0);
     SETGATE(idt[T_SIMDERR], GATEDESC_TRAP, GD_KT, simd_trap, 0);
 
+    // set syscall to be callable from userspace
+    SETGATE(idt[T_SYSCALL], GATEDESC_TRAP, GD_KT, syscall_trap, 3);
+
     // Per-CPU setup 
 	trap_init_percpu();
 }
@@ -172,6 +175,9 @@ trap_dispatch(struct Trapframe *tf)
             break;
         case T_PGFLT:
             page_fault_handler(tf);
+            break;
+        case T_SYSCALL:
+            cprintf("got a syscall baby\n");
             break;
         default:
 	        // Unexpected trap: The user process or the kernel has a bug.

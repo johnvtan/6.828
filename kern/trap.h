@@ -42,4 +42,5 @@ void floating_point_trap(void);
 void align_check_trap(void);
 void machine_check_trap(void);
 void simd_trap(void);
+void syscall_trap(void);
 #endif /* JOS_KERN_TRAP_H */

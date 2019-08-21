@@ -449,7 +449,6 @@ pgdir_walk(pde_t *pgdir, const void *va, int create)
         // Allocate a zerod out page
         struct PageInfo *pt_page_info = page_alloc(ALLOC_ZERO);
         if (pt_page_info == NULL) {
-            cprintf("Error in pgdir_walk: Page alloc ran out of memory\n");
             return NULL;
         }
 
@@ -714,7 +713,6 @@ check_page_free_list(bool only_low_memory)
 	// try to make sure it eventually causes trouble.
     int i = 0;
 	for (pp = page_free_list; pp; pp = pp->pp_link)
-        //cprintf("here: %d\n", i++);
 		if (PDX(page2pa(pp)) < pdx_limit)
 			memset(page2kva(pp), 0x97, 128);
 
@@ -722,7 +720,6 @@ check_page_free_list(bool only_low_memory)
 	first_free_page = (char *) boot_alloc(0);
     i = 0;
 	for (pp = page_free_list; pp; pp = pp->pp_link) {
-        //cprintf("here2: %d\n", i++);
 		// check that we didn't corrupt the free list itself
 		assert(pp >= pages);
 		assert(pp < pages + npages);
