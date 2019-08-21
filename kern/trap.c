@@ -168,7 +168,7 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-    // TODO - How do I get the trap number?
+    int rv; 
     switch (tf->tf_trapno) {
         case T_BRKPT:
             breakpoint_handler(tf);
@@ -178,12 +178,15 @@ trap_dispatch(struct Trapframe *tf)
             break;
         case T_SYSCALL:
             cprintf("got a syscall baby\n");
-            syscall(tf->tf_regs.reg_eax, // eax contains syscall no 
-                    tf->tf_regs.reg_edx, // edx contains a1
-                    tf->tf_regs.reg_ecx, // ecx = a2
-                    tf->tf_regs.reg_ebx, // ebx = a3
-                    tf->tf_regs.reg_edi, // edi = a4
-                    tf->tf_regs.reg_esi); // esi = a5
+            rv = syscall(tf->tf_regs.reg_eax, // eax contains syscall no 
+                          tf->tf_regs.reg_edx, // edx contains a1
+                          tf->tf_regs.reg_ecx, // ecx = a2
+                          tf->tf_regs.reg_ebx, // ebx = a3
+                          tf->tf_regs.reg_edi, // edi = a4
+                          tf->tf_regs.reg_esi); // esi = a5
+
+            // store the return variable into eax of the current tf
+            tf->tf_regs.reg_eax = rv;
             break;
         default:
 	        // Unexpected trap: The user process or the kernel has a bug.
