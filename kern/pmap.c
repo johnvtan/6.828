@@ -654,7 +654,31 @@ int
 user_mem_check(struct Env *env, const void *va, size_t len, int perm)
 {
 	// LAB 3: Your code here.
+    uintptr_t start = (uintptr_t)va;
+    uintptr_t end = start + len;
 
+    // get range of pages that need to be checked
+    uint32_t start_page = start & ~0xFFF;
+    uint32_t end_page = end & ~0xFFF;
+    cprintf("Start addr: %u, end addr: %u, num_pages=%u\n", start, end, (start_page-end_page)/PGSIZE);
+    uint32_t curr;
+    pte_t *pte;
+
+    perm |= PTE_P;
+    for (curr = start_page; curr <= end_page; curr += PGSIZE) {
+        // find pte corresponding to curr
+        pte = pgdir_walk(env->env_pgdir, (void*)curr, 0);
+        if (pte == NULL) {
+            user_mem_check_addr = start > curr ? start : curr;
+            return -E_FAULT;
+        }
+
+        // check permissions of pte
+        if ((*pte & perm) != perm) {
+            user_mem_check_addr = start > curr ? start : curr;
+            return -E_FAULT; 
+        }
+    }
 	return 0;
 }
 
