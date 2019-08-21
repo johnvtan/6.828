@@ -197,9 +197,22 @@ cga_putc(int c)
 	if (crt_pos >= CRT_SIZE) {
 		int i;
 
+        /*
+         * crt_buf points to the beginning of the display buffer
+         * this will move the display data one line up
+         * it copies all the data starting from one row down (crt_buf + CRT_COLS)
+         * into crt_buf
+         */
 		memmove(crt_buf, crt_buf + CRT_COLS, (CRT_SIZE - CRT_COLS) * sizeof(uint16_t));
+
+        /*
+         * Then, it fills the last row with spaces to clear the last line
+         */
 		for (i = CRT_SIZE - CRT_COLS; i < CRT_SIZE; i++)
 			crt_buf[i] = 0x0700 | ' ';
+        /*
+         * Then the pointer into the crt_buf is set to point at the last line of the display
+         */
 		crt_pos -= CRT_COLS;
 	}
 

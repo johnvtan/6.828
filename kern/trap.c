@@ -72,8 +72,32 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
+    SETGATE(idt[T_DIVIDE], GATEDESC_TRAP, GD_KT, divide_error_trap, 0);
+    SETGATE(idt[T_DEBUG], GATEDESC_TRAP, GD_KT, debug_trap, 0);
+    SETGATE(idt[T_NMI], GATEDESC_INT, GD_KT, nmi_trap, 0);
 
-	// Per-CPU setup 
+    // used to let user programs set breakpoints?
+    SETGATE(idt[T_BRKPT], GATEDESC_TRAP, GD_KT, breakpoint_trap, 3);
+
+    SETGATE(idt[T_OFLOW], GATEDESC_TRAP, GD_KT, overflow_trap, 0);
+    SETGATE(idt[T_BOUND], GATEDESC_TRAP, GD_KT, bound_trap, 0);
+    SETGATE(idt[T_ILLOP], GATEDESC_TRAP, GD_KT, invalid_opcode_trap, 0);
+    SETGATE(idt[T_DEVICE], GATEDESC_TRAP, GD_KT, no_device_trap, 0);
+    SETGATE(idt[T_DBLFLT], GATEDESC_TRAP, GD_KT, double_fault_trap, 0);
+    SETGATE(idt[T_TSS], GATEDESC_TRAP, GD_KT, invalid_tss_trap, 0);
+    SETGATE(idt[T_SEGNP], GATEDESC_TRAP, GD_KT, seg_not_present_trap, 0);
+    SETGATE(idt[T_STACK], GATEDESC_TRAP, GD_KT, stack_trap, 0);
+    SETGATE(idt[T_GPFLT], GATEDESC_TRAP, GD_KT, gp_trap, 0);
+    SETGATE(idt[T_PGFLT], GATEDESC_TRAP, GD_KT, page_fault_trap, 0);
+    SETGATE(idt[T_FPERR], GATEDESC_TRAP, GD_KT, floating_point_trap, 0);
+    SETGATE(idt[T_ALIGN], GATEDESC_TRAP, GD_KT, align_check_trap, 0);
+    SETGATE(idt[T_MCHK], GATEDESC_TRAP, GD_KT, machine_check_trap, 0);
+    SETGATE(idt[T_SIMDERR], GATEDESC_TRAP, GD_KT, simd_trap, 0);
+
+    // set syscall to be callable from userspace
+    SETGATE(idt[T_SYSCALL], GATEDESC_TRAP, GD_KT, syscall_trap, 3);
+
+    // Per-CPU setup 
 	trap_init_percpu();
 }
 
@@ -176,6 +200,28 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
+    int rv; 
+    switch (tf->tf_trapno) {
+        case T_BRKPT:
+            breakpoint_handler(tf);
+            break;
+        case T_PGFLT:
+            page_fault_handler(tf);
+            break;
+        case T_SYSCALL:
+            rv = syscall(tf->tf_regs.reg_eax, // eax contains syscall no 
+                          tf->tf_regs.reg_edx, // edx contains a1
+                          tf->tf_regs.reg_ecx, // ecx = a2
+                          tf->tf_regs.reg_ebx, // ebx = a3
+                          tf->tf_regs.reg_edi, // edi = a4
+                          tf->tf_regs.reg_esi); // esi = a5
+
+            // store the return variable into eax of the current tf
+            tf->tf_regs.reg_eax = rv;
+            break;
+        default:
+            break;
+    }
 
 	// Handle spurious interrupts
 	// The hardware sometimes raises these because of noise on the
@@ -245,8 +291,7 @@ trap(struct Trapframe *tf)
 
 	// Record that tf is the last real trapframe so
 	// print_trapframe can print some additional information.
-	last_tf = tf;
-
+	last_tf = tf; 
 	// Dispatch based on what type of trap occurred
 	trap_dispatch(tf);
 
@@ -269,8 +314,9 @@ page_fault_handler(struct Trapframe *tf)
 	fault_va = rcr2();
 
 	// Handle kernel-mode page faults.
-
-	// LAB 3: Your code here.
+    if ((tf->tf_cs & 3) == 0) {
+        panic("Got a page fault in kernel mode: va=%08x\n", fault_va);
+    }
 
 	// We've already handled kernel-mode exceptions, so if we get here,
 	// the page fault happened in user mode.
@@ -313,3 +359,17 @@ page_fault_handler(struct Trapframe *tf)
 	env_destroy(curenv);
 }
 
+// if called from user mode, run the JOS kernel monitor
+void
+breakpoint_handler(struct Trapframe *tf)
+{
+    // if we're in kernel mode, panic?
+    if ((tf->tf_cs & 3) != 3) {
+        panic("Breakpoint in the kernel!\n");
+    }
+
+    cprintf("User mode breakpoint exception - running JOS kernel monitor\n");
+
+    // TODO - Do I have to do something with the old environment (make a new env?)
+    monitor(tf);
+}
