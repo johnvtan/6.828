@@ -70,7 +70,7 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
 	// Return any appropriate return value.
 	// LAB 3: Your code here.
 
-	panic("syscall not implemented");
+    cprintf("got syscall %u\n", syscallno);
 
 	switch (syscallno) {
 	default:

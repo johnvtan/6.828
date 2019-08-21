@@ -178,6 +178,12 @@ trap_dispatch(struct Trapframe *tf)
             break;
         case T_SYSCALL:
             cprintf("got a syscall baby\n");
+            syscall(tf->tf_regs.reg_eax, // eax contains syscall no 
+                    tf->tf_regs.reg_edx, // edx contains a1
+                    tf->tf_regs.reg_ecx, // ecx = a2
+                    tf->tf_regs.reg_ebx, // ebx = a3
+                    tf->tf_regs.reg_edi, // edi = a4
+                    tf->tf_regs.reg_esi); // esi = a5
             break;
         default:
 	        // Unexpected trap: The user process or the kernel has a bug.
