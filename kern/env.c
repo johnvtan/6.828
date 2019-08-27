@@ -590,6 +590,7 @@ env_run(struct Env *e)
 
     // load page directory of environment
     lcr3(PADDR(curenv->env_pgdir));
+    unlock_kernel();
     env_pop_tf(&e->env_tf);
     panic("env_run returned from env_pop_tf but should never get here!\n");
 }
