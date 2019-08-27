@@ -345,9 +345,20 @@ page_init(void)
     pages[0].pp_link = NULL;
     
     int i;
+    int mp_entry_page_idx = MPENTRY_PADDR / PGSIZE;
 
     // Memory between [PGSIZE, npages_basemem * PGSIZE] is free
-    for (i = 1; i < npages_basemem; i++) {
+    for (i = 1; i < mp_entry_page_idx; i++) {
+        pages[i].pp_ref = 0;
+        pages[i].pp_link = page_free_list;
+        page_free_list = &pages[i];
+    }
+
+    // Mark the MP entry physical page as allocated
+    pages[mp_entry_page_idx].pp_ref = 1;
+    pages[mp_entry_page_idx].pp_link = NULL;
+
+    for (i = mp_entry_page_idx+1; i < npages_basemem; i++) {
         pages[i].pp_ref = 0;
         pages[i].pp_link = page_free_list;
         page_free_list = &pages[i];
@@ -696,7 +707,15 @@ mmio_map_region(physaddr_t pa, size_t size)
 	// Hint: The staff solution uses boot_map_region.
 	//
 	// Your code here:
-	panic("mmio_map_region not implemented");
+    size = ROUNDUP(size, PGSIZE);
+    if (base + size > MMIOLIM) {
+        panic("mmio_map_regino: base+size above MMIOLIM\n");
+    }
+    int perm = PTE_PCD | PTE_PWT | PTE_W | PTE_P;
+    boot_map_region(kern_pgdir, base, size, pa, perm);
+    void *rv = (void*) base;
+    base += size;
+    return rv;
 }
 
 static uintptr_t user_mem_check_addr;
