@@ -30,24 +30,15 @@ sched_yield(void)
 
 	// LAB 4: Your code here.
     // how to get index of curenv?    
-    int curenv_idx = -1; 
-    if (curenv != NULL) {
-        curenv_idx = ENVX(curenv->env_id);
+    int curenv_idx = curenv == NULL ? 0 : ENVX(curenv->env_id); 
+    int i = 0;
+    int curr = 0;
+    for (i = 0; i < NENV; i++) {
+        curr = (curenv_idx + i) % NENV;
+        if (envs[curr].env_status == ENV_RUNNABLE) {
+            env_run(&envs[curr]);
+        }
     }
-
-    // loop through envs to find a runnable one
-    int i = curenv_idx;
-    do {
-        i++;
-        if (i >= NENV) {
-            i = 0;
-        }
-
-        if (envs[i].env_status == ENV_RUNNABLE) {
-            env_run(&envs[i]);
-        }
-
-    } while (i != curenv_idx && curenv_idx > -1);
 
     // if we get here, check to see if we can run curenv again
     if (curenv != NULL && curenv->env_status == ENV_RUNNING) {
