@@ -47,7 +47,7 @@ sched_yield(void)
             env_run(&envs[i]);
         }
 
-    } while (i != curenv_idx);
+    } while (i != curenv_idx && curenv_idx > -1);
 
     // if we get here, check to see if we can run curenv again
     if (curenv->env_status == ENV_RUNNING) {

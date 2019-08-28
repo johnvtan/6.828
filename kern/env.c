@@ -120,25 +120,15 @@ env_init(void)
 	// Set up envs array
 	// LAB 3: Your code here.
     int i;
-    struct Env curr_env;
-    for (i = 0; i < NENV; i++) {
-        curr_env = envs[i]; 
-        curr_env.env_id = 0;
-        curr_env.env_parent_id = 0;
-        curr_env.env_runs = 0;
-        curr_env.env_pgdir = NULL;
-        curr_env.env_status = ENV_FREE;
-
-        // set up env_links to be in same order as envs array
-        if (i < NENV-1) {
-            curr_env.env_link = &envs[i+1];
-        } else {
-            curr_env.env_link = NULL;
-        }
+    for (i = NENV; i >= 0; i--) {
+        envs[i].env_id = 0;
+        envs[i].env_parent_id = 0;
+        envs[i].env_runs = 0;
+        envs[i].env_pgdir = NULL;
+        envs[i].env_status = ENV_FREE;
+        envs[i].env_link = env_free_list;
+        env_free_list = &envs[i];
     }
-
-    // free list should point to first element in envs array
-    env_free_list = &envs[0];
 
 	// Per-CPU part of the initialization
 	env_init_percpu();
@@ -446,7 +436,7 @@ env_create(uint8_t *binary, enum EnvType type)
     struct Env *first_env = NULL;
     int err = env_alloc(&first_env, 0);
     if (err < 0) {
-        panic("env_create error: Could not allocate new env, %e\n");
+        panic("env_create error: Could not allocate new env, %e\n", err);
     }
     first_env->env_type = type;
     load_icode(first_env, binary);
