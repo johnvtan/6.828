@@ -11,3 +11,12 @@ physical location and its link address.
 If a user program calls a syscall, the kernel is only locked after hardware pushes values on the stack. If multiple
 programs running on different processors issue a syscall at the same time and the kernel only used a single stack, all
 the values would be mixed together and neither processor would be able to return to user mode correctly. 
+
+# Exercise 6
+## Question 1
+Kernel memory is mapped to the top of each environment's address space, so even after the page directory is changed, we
+can still dereference `e`.
+
+## Question 2
+An environment should be able to continue to run where it left off after returning from kernel mode. This is especially
+relevant when preemptive interrupts are implemented. User context is saved on a kernel stack when in the trap handler.
