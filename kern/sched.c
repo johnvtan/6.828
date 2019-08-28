@@ -38,7 +38,6 @@ sched_yield(void)
     // loop through envs to find a runnable one
     int i = curenv_idx + 1;
     while (i != curenv_idx) {
-        cprintf("i = %d\n", i);
         // make it loop circularly
         if (i >= NENV) {
             i = 0;
@@ -46,7 +45,6 @@ sched_yield(void)
 
         // run new runnable env
         if (envs[i].env_status == ENV_RUNNABLE) {
-            cprintf("running this env\n");
             env_run(&envs[i]);
         }
     }

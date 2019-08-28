@@ -307,6 +307,7 @@ myapi.key:
 # For test runs
 
 prep-%:
+	@echo $(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
 	$(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
 
 run-%-nox-gdb: prep-% pre-qemu

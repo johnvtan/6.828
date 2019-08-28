@@ -39,7 +39,7 @@ i386_init(void)
 	lapic_init();
 
 	// Lab 4 multitasking initialization functions
-	//pic_init();
+	pic_init();
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
@@ -48,6 +48,7 @@ i386_init(void)
 	// Starting non-boot CPUs
 	boot_aps();
 
+    /*
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
@@ -55,6 +56,8 @@ i386_init(void)
 	// Touch all you want.
 	ENV_CREATE(user_yield, ENV_TYPE_USER);
 #endif // TEST*
+*/
+    ENV_CREATE(user_hello, ENV_TYPE_USER);
 
     cprintf("KERNEL INIT DONE\n");
 	// Schedule and run the first user environment!

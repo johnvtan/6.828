@@ -131,7 +131,7 @@ trap_init_percpu(void)
 	// Setup a TSS so that we get the right stack
 	// when we trap to the kernel.
     int cpu_num = cpunum();
-	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - (cpu_num * KSTKSIZE + KSTKGAP);
+	thiscpu->cpu_ts.ts_esp0 = KSTACKTOP - cpu_num * (KSTKSIZE + KSTKGAP);
 	thiscpu->cpu_ts.ts_ss0 = GD_KD;
 	thiscpu->cpu_ts.ts_iomb = sizeof(struct Taskstate);
 
@@ -236,6 +236,7 @@ trap_dispatch(struct Trapframe *tf)
 	// LAB 4: Your code here.
 
 	// Unexpected trap: The user process or the kernel has a bug.
+    cprintf("UNEXPECTED trap\n");
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
 		panic("unhandled trap in kernel");
