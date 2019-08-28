@@ -50,7 +50,7 @@ sched_yield(void)
     } while (i != curenv_idx && curenv_idx > -1);
 
     // if we get here, check to see if we can run curenv again
-    if (curenv->env_status == ENV_RUNNING) {
+    if (curenv != NULL && curenv->env_status == ENV_RUNNING) {
         env_run(curenv);
     }
 
