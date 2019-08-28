@@ -199,27 +199,26 @@ trap_dispatch(struct Trapframe *tf)
 {
 	// Handle processor exceptions.
 	// LAB 3: Your code here.
-    int rv; 
-    switch (tf->tf_trapno) {
-        case T_BRKPT:
-            breakpoint_handler(tf);
-            break;
-        case T_PGFLT:
-            page_fault_handler(tf);
-            break;
-        case T_SYSCALL:
-            rv = syscall(tf->tf_regs.reg_eax, // eax contains syscall no 
-                          tf->tf_regs.reg_edx, // edx contains a1
-                          tf->tf_regs.reg_ecx, // ecx = a2
-                          tf->tf_regs.reg_ebx, // ebx = a3
-                          tf->tf_regs.reg_edi, // edi = a4
-                          tf->tf_regs.reg_esi); // esi = a5
 
-            // store the return variable into eax of the current tf
-            tf->tf_regs.reg_eax = rv;
-            break;
-        default:
-            break;
+    if (tf->tf_trapno == T_BRKPT) {
+        breakpoint_handler(tf);
+        return;
+    }
+
+    if (tf->tf_trapno == T_PGFLT) {
+        page_fault_handler(tf);
+        return;
+    }
+
+    if (tf->tf_trapno == T_SYSCALL) {
+        int rv = syscall(tf->tf_regs.reg_eax, // eax contains syscall no 
+                         tf->tf_regs.reg_edx, // edx contains a1
+                         tf->tf_regs.reg_ecx, // ecx = a2
+                         tf->tf_regs.reg_ebx, // ebx = a3
+                         tf->tf_regs.reg_edi, // edi = a4
+                         tf->tf_regs.reg_esi); // esi = a5
+        tf->tf_regs.reg_eax = rv;
+        return;
     }
 
 	// Handle spurious interrupts
@@ -236,7 +235,7 @@ trap_dispatch(struct Trapframe *tf)
 	// LAB 4: Your code here.
 
 	// Unexpected trap: The user process or the kernel has a bug.
-    cprintf("UNEXPECTED trap\n");
+    cprintf("UNEXPECTED trap: %d\n", tf->tf_trapno);
 	print_trapframe(tf);
 	if (tf->tf_cs == GD_KT)
 		panic("unhandled trap in kernel");
