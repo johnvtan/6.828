@@ -6,7 +6,7 @@
 #include <kern/trap.h>
 #include <kern/console.h>
 #include <kern/monitor.h>
-#include <kern/env.h>
+#include <kern/env.h> 
 #include <kern/syscall.h>
 #include <kern/sched.h>
 #include <kern/kclock.h>
@@ -304,7 +304,6 @@ trap(struct Trapframe *tf)
 		sched_yield();
 }
 
-
 void
 page_fault_handler(struct Trapframe *tf)
 {
@@ -353,11 +352,45 @@ page_fault_handler(struct Trapframe *tf)
 
 	// LAB 4: Your code here.
 
-	// Destroy the environment that caused the fault.
-	cprintf("[%08x] user fault va %08x ip %08x\n",
-		curenv->env_id, fault_va, tf->tf_eip);
-	print_trapframe(tf);
-	env_destroy(curenv);
+    // user never installed pgfault handler, so destroy it
+    if (curenv->env_pgfault_upcall == NULL) {
+        // Destroy the environment that caused the fault.
+        cprintf("User didn't install a pgfault handler\n");
+        cprintf("[%08x] user fault va %08x ip %08x\n",
+            curenv->env_id, fault_va, tf->tf_eip);
+        print_trapframe(tf);
+        env_destroy(curenv);
+        return;
+    }
+    
+    // pgfault upcall is OK here
+
+    struct UTrapframe *utf;
+    if (tf->tf_esp >= (UXSTACKTOP - PGSIZE) && tf->tf_esp < UXSTACKTOP) {
+        // if this is a recursive call, then decrement the exception sp by 4 and put the utf there
+        utf = (struct UTrapframe *)(tf->tf_esp - 4 - sizeof(struct UTrapframe));
+    } else {
+        // default case - utf is the first thing on user exception stack
+        utf = (struct UTrapframe *)UXSTACKTOP - sizeof(struct UTrapframe);
+    }
+
+    // make sure user can access where we want to put utf 
+    user_mem_assert(curenv, (void*)utf, sizeof(struct UTrapframe), PTE_U|PTE_W|PTE_P);
+
+    utf->utf_fault_va = fault_va;
+    utf->utf_err = tf->tf_err;
+    utf->utf_regs = tf->tf_regs;
+    utf->utf_eip = tf->tf_eip;
+    utf->utf_eflags = tf->tf_eflags;
+    utf->utf_esp = tf->tf_esp;
+
+    // set current tf to jump back to pgfault_upcall with user exception stack
+    tf->tf_eip = (uintptr_t)curenv->env_pgfault_upcall;
+    tf->tf_esp = (uintptr_t)utf;
+
+    // finally run the curenv, which should point to the pgfault_upcall
+    // the stack pointer should be on the user exception stack
+    env_run(curenv);
 }
 
 // if called from user mode, run the JOS kernel monitor
