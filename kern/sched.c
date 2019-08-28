@@ -36,18 +36,18 @@ sched_yield(void)
     }
 
     // loop through envs to find a runnable one
-    int i = curenv_idx + 1;
-    while (i != curenv_idx) {
-        // make it loop circularly
+    int i = curenv_idx;
+    do {
+        i++;
         if (i >= NENV) {
             i = 0;
         }
 
-        // run new runnable env
         if (envs[i].env_status == ENV_RUNNABLE) {
             env_run(&envs[i]);
         }
-    }
+
+    } while (i != curenv_idx);
 
     // if we get here, check to see if we can run curenv again
     if (curenv->env_status == ENV_RUNNING) {
