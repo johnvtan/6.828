@@ -375,6 +375,8 @@ page_fault_handler(struct Trapframe *tf)
     }
 
     // make sure user can access where we want to put utf 
+    // TODO - is this right? failing faultnostack test since it prints out the incorrect address
+    // Maybe I'm setting user exception sp wrong?
     user_mem_assert(curenv, (void*)utf, sizeof(struct UTrapframe), PTE_U|PTE_W|PTE_P);
 
     utf->utf_fault_va = fault_va;
