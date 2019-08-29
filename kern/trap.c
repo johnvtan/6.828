@@ -95,6 +95,24 @@ trap_init(void)
     // set syscall to be callable from userspace
     SETGATE(idt[T_SYSCALL], GATEDESC_TRAP, GD_KT, syscall_trap, 3);
 
+    // this is annoying
+    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_TRAP, GD_KT, timer_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_TRAP, GD_KT, kbd_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_TRAP, GD_KT, irq2_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_TRAP, GD_KT, irq3_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_TRAP, GD_KT, serial_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_TRAP, GD_KT, irq5_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+6], GATEDESC_TRAP, GD_KT, irq6_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+7], GATEDESC_TRAP, GD_KT, spurious_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+8], GATEDESC_TRAP, GD_KT, irq8_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+9], GATEDESC_TRAP, GD_KT, irq9_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+0], GATEDESC_TRAP, GD_KT, irq10_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_TRAP, GD_KT, irq11_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_TRAP, GD_KT, irq12_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_TRAP, GD_KT, irq13_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_TRAP, GD_KT, ide_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_TRAP, GD_KT, irq15_trap, 0);
+
     // Per-CPU setup 
 	trap_init_percpu();
 }

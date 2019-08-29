@@ -43,4 +43,22 @@ void align_check_trap(void);
 void machine_check_trap(void);
 void simd_trap(void);
 void syscall_trap(void);
+
+void timer_trap(void);
+void kbd_trap(void);
+void irq2_trap(void);
+void irq3_trap(void);
+void serial_trap(void);
+void irq5_trap(void);
+void irq6_trap(void);
+void spurious_trap(void);
+void irq8_trap(void);
+void irq9_trap(void);
+void irq10_trap(void);
+void irq11_trap(void);
+void irq12_trap(void);
+void irq13_trap(void);
+void ide_trap(void);
+void irq15_trap(void);
 #endif /* JOS_KERN_TRAP_H */
+
