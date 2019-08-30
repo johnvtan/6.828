@@ -70,48 +70,48 @@ trap_init(void)
 	extern struct Segdesc gdt[];
 
 	// LAB 3: Your code here.
-    SETGATE(idt[T_DIVIDE], GATEDESC_TRAP, GD_KT, divide_error_trap, 0);
-    SETGATE(idt[T_DEBUG], GATEDESC_TRAP, GD_KT, debug_trap, 0);
+    SETGATE(idt[T_DIVIDE], GATEDESC_INT, GD_KT, divide_error_trap, 0);
+    SETGATE(idt[T_DEBUG], GATEDESC_INT, GD_KT, debug_trap, 0);
     SETGATE(idt[T_NMI], GATEDESC_INT, GD_KT, nmi_trap, 0);
 
     // used to let user programs set breakpoints?
-    SETGATE(idt[T_BRKPT], GATEDESC_TRAP, GD_KT, breakpoint_trap, 3);
+    SETGATE(idt[T_BRKPT], GATEDESC_INT, GD_KT, breakpoint_trap, 3);
 
-    SETGATE(idt[T_OFLOW], GATEDESC_TRAP, GD_KT, overflow_trap, 0);
-    SETGATE(idt[T_BOUND], GATEDESC_TRAP, GD_KT, bound_trap, 0);
-    SETGATE(idt[T_ILLOP], GATEDESC_TRAP, GD_KT, invalid_opcode_trap, 0);
-    SETGATE(idt[T_DEVICE], GATEDESC_TRAP, GD_KT, no_device_trap, 0);
-    SETGATE(idt[T_DBLFLT], GATEDESC_TRAP, GD_KT, double_fault_trap, 0);
-    SETGATE(idt[T_TSS], GATEDESC_TRAP, GD_KT, invalid_tss_trap, 0);
-    SETGATE(idt[T_SEGNP], GATEDESC_TRAP, GD_KT, seg_not_present_trap, 0);
-    SETGATE(idt[T_STACK], GATEDESC_TRAP, GD_KT, stack_trap, 0);
-    SETGATE(idt[T_GPFLT], GATEDESC_TRAP, GD_KT, gp_trap, 0);
-    SETGATE(idt[T_PGFLT], GATEDESC_TRAP, GD_KT, page_fault_trap, 0);
-    SETGATE(idt[T_FPERR], GATEDESC_TRAP, GD_KT, floating_point_trap, 0);
-    SETGATE(idt[T_ALIGN], GATEDESC_TRAP, GD_KT, align_check_trap, 0);
-    SETGATE(idt[T_MCHK], GATEDESC_TRAP, GD_KT, machine_check_trap, 0);
-    SETGATE(idt[T_SIMDERR], GATEDESC_TRAP, GD_KT, simd_trap, 0);
+    SETGATE(idt[T_OFLOW], GATEDESC_INT, GD_KT, overflow_trap, 0);
+    SETGATE(idt[T_BOUND], GATEDESC_INT, GD_KT, bound_trap, 0);
+    SETGATE(idt[T_ILLOP], GATEDESC_INT, GD_KT, invalid_opcode_trap, 0);
+    SETGATE(idt[T_DEVICE], GATEDESC_INT, GD_KT, no_device_trap, 0);
+    SETGATE(idt[T_DBLFLT], GATEDESC_INT, GD_KT, double_fault_trap, 0);
+    SETGATE(idt[T_TSS], GATEDESC_INT, GD_KT, invalid_tss_trap, 0);
+    SETGATE(idt[T_SEGNP], GATEDESC_INT, GD_KT, seg_not_present_trap, 0);
+    SETGATE(idt[T_STACK], GATEDESC_INT, GD_KT, stack_trap, 0);
+    SETGATE(idt[T_GPFLT], GATEDESC_INT, GD_KT, gp_trap, 0);
+    SETGATE(idt[T_PGFLT], GATEDESC_INT, GD_KT, page_fault_trap, 0);
+    SETGATE(idt[T_FPERR], GATEDESC_INT, GD_KT, floating_point_trap, 0);
+    SETGATE(idt[T_ALIGN], GATEDESC_INT, GD_KT, align_check_trap, 0);
+    SETGATE(idt[T_MCHK], GATEDESC_INT, GD_KT, machine_check_trap, 0);
+    SETGATE(idt[T_SIMDERR], GATEDESC_INT, GD_KT, simd_trap, 0);
 
     // set syscall to be callable from userspace
-    SETGATE(idt[T_SYSCALL], GATEDESC_TRAP, GD_KT, syscall_trap, 3);
+    SETGATE(idt[T_SYSCALL], GATEDESC_INT, GD_KT, syscall_trap, 3);
 
     // this is annoying
-    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_TRAP, GD_KT, timer_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_TRAP, GD_KT, kbd_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_TRAP, GD_KT, irq2_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_TRAP, GD_KT, irq3_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_TRAP, GD_KT, serial_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_TRAP, GD_KT, irq5_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+6], GATEDESC_TRAP, GD_KT, irq6_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+7], GATEDESC_TRAP, GD_KT, spurious_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+8], GATEDESC_TRAP, GD_KT, irq8_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+9], GATEDESC_TRAP, GD_KT, irq9_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+0], GATEDESC_TRAP, GD_KT, irq10_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_TRAP, GD_KT, irq11_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_TRAP, GD_KT, irq12_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_TRAP, GD_KT, irq13_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_TRAP, GD_KT, ide_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_TRAP, GD_KT, irq15_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_INT, GD_KT, timer_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_INT, GD_KT, kbd_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_INT, GD_KT, irq2_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_INT, GD_KT, irq3_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_INT, GD_KT, serial_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_INT, GD_KT, irq5_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+6], GATEDESC_INT, GD_KT, irq6_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+7], GATEDESC_INT, GD_KT, spurious_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+8], GATEDESC_INT, GD_KT, irq8_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+9], GATEDESC_INT, GD_KT, irq9_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+0], GATEDESC_INT, GD_KT, irq10_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_INT, GD_KT, irq11_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_INT, GD_KT, irq12_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_INT, GD_KT, irq13_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_INT, GD_KT, ide_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_INT, GD_KT, irq15_trap, 0);
 
     // Per-CPU setup 
 	trap_init_percpu();
@@ -251,6 +251,10 @@ trap_dispatch(struct Trapframe *tf)
 	// Handle clock interrupts. Don't forget to acknowledge the
 	// interrupt using lapic_eoi() before calling the scheduler!
 	// LAB 4: Your code here.
+    if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
+        sched_yield();
+        panic("Failed to yield!\n");
+    }
 
 	// Unexpected trap: The user process or the kernel has a bug.
     cprintf("UNEXPECTED trap: %d\n", tf->tf_trapno);
