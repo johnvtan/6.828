@@ -96,7 +96,7 @@ trap_init(void)
     SETGATE(idt[T_SYSCALL], GATEDESC_INT, GD_KT, syscall_trap, 3);
 
     // this is annoying
-    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_INT, GD_KT, timer_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+0], GATEDESC_INT, GD_KT, timer_trap, 0);
     SETGATE(idt[IRQ_OFFSET+1], GATEDESC_INT, GD_KT, kbd_trap, 0);
     SETGATE(idt[IRQ_OFFSET+2], GATEDESC_INT, GD_KT, irq2_trap, 0);
     SETGATE(idt[IRQ_OFFSET+3], GATEDESC_INT, GD_KT, irq3_trap, 0);
@@ -254,6 +254,11 @@ trap_dispatch(struct Trapframe *tf)
     if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
         sched_yield();
         panic("Failed to yield!\n");
+    }
+
+    if (tf->tf_trapno == IRQ_OFFSET + 10) {
+        cprintf("got interrupt 42 again\n");
+        return;
     }
 
 	// Unexpected trap: The user process or the kernel has a bug.
