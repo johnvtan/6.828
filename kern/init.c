@@ -48,6 +48,12 @@ i386_init(void)
 	// Starting non-boot CPUs
 	boot_aps();
 
+    // create a bunch of idle envs so that other CPUs don't immediately halt
+    //int i;
+    //for (i = 0; i < NCPU; i++) {
+    //    ENV_CREATE(user_idle, ENV_TYPE_USER);
+    //}
+
 #if defined(TEST)
 	// Don't touch -- used by grading script!
 	ENV_CREATE(TEST, ENV_TYPE_USER);
