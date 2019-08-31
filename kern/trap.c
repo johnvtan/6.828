@@ -106,12 +106,12 @@ trap_init(void)
     SETGATE(idt[IRQ_OFFSET+7], GATEDESC_INT, GD_KT, spurious_trap, 0);
     SETGATE(idt[IRQ_OFFSET+8], GATEDESC_INT, GD_KT, irq8_trap, 0);
     SETGATE(idt[IRQ_OFFSET+9], GATEDESC_INT, GD_KT, irq9_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+0], GATEDESC_INT, GD_KT, irq10_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+1], GATEDESC_INT, GD_KT, irq11_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+2], GATEDESC_INT, GD_KT, irq12_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+3], GATEDESC_INT, GD_KT, irq13_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+4], GATEDESC_INT, GD_KT, ide_trap, 0);
-    SETGATE(idt[IRQ_OFFSET+5], GATEDESC_INT, GD_KT, irq15_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+10], GATEDESC_INT, GD_KT, irq10_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+11], GATEDESC_INT, GD_KT, irq11_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+12], GATEDESC_INT, GD_KT, irq12_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+13], GATEDESC_INT, GD_KT, irq13_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+14], GATEDESC_INT, GD_KT, ide_trap, 0);
+    SETGATE(idt[IRQ_OFFSET+15], GATEDESC_INT, GD_KT, irq15_trap, 0);
 
     // Per-CPU setup 
 	trap_init_percpu();
@@ -253,12 +253,20 @@ trap_dispatch(struct Trapframe *tf)
 	// LAB 4: Your code here.
     if (tf->tf_trapno == IRQ_OFFSET + IRQ_TIMER) {
         cprintf("got timer int\n");
+        lapic_eoi();
         sched_yield();
         panic("Failed to yield!\n");
     }
 
     if (tf->tf_trapno == IRQ_OFFSET + 10) {
         cprintf("got interrupt 42 again\n");
+        //lapic_eoi();
+        return;
+    }
+
+    if (tf->tf_trapno == IRQ_OFFSET + 11) {
+        cprintf("got int 43??\n");
+        lapic_eoi();
         return;
     }
 
