@@ -46,6 +46,8 @@ seta20.2:
   # identical to their physical addresses, so that the 
   # effective memory map does not change during the switch.
   lgdt    gdtdesc
+
+  # sets CR0.PE which enables protected mode on the next long jump
   movl    %cr0, %eax
   orl     $CR0_PE_ON, %eax
   movl    %eax, %cr0
@@ -73,12 +75,20 @@ spin:
   jmp spin
 
 # Bootstrap GDT
+# This is the actual GDT in memory. It's somewhere in the bootloader's memory.
 .p2align 2                                # force 4 byte alignment
 gdt:
+  # The first segment in the GDT is invalid 
   SEG_NULL				# null seg
+  # The Code seg is marked as readable and executable
+  # This segment is flat and spans the entire 4 GB address space
   SEG(STA_X|STA_R, 0x0, 0xffffffff)	# code seg
+  # The data seg is marked as writeable and is also flat
   SEG(STA_W, 0x0, 0xffffffff)	        # data seg
 
+# The format of the GDT register is:
+# 16 bits -> GDT limit
+# 32 bits -> GDT base addr
 gdtdesc:
   .word   0x17                            # sizeof(gdt) - 1
   .long   gdt                             # address gdt

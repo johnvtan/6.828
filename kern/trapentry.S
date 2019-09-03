@@ -44,13 +44,80 @@
 
 .text
 
+
 /*
  * Lab 3: Your code here for generating entry points for the different traps.
  */
+TRAPHANDLER_NOEC(divide_error_trap, T_DIVIDE)
+TRAPHANDLER_NOEC(debug_trap, T_DEBUG)
+TRAPHANDLER_NOEC(nmi_trap, T_NMI)
+TRAPHANDLER_NOEC(breakpoint_trap, T_BRKPT)
+TRAPHANDLER_NOEC(overflow_trap, T_OFLOW)
+TRAPHANDLER_NOEC(bound_trap, T_BOUND)
+TRAPHANDLER_NOEC(invalid_opcode_trap, T_ILLOP)
+TRAPHANDLER_NOEC(no_device_trap, T_DEVICE)
+TRAPHANDLER(double_fault_trap, T_DBLFLT)
+//TRAPHANDLER_NOEC(coproc_overrun_trap, 
+TRAPHANDLER(invalid_tss_trap, T_TSS)
+TRAPHANDLER(seg_not_present_trap, T_SEGNP)
+TRAPHANDLER(stack_trap, T_STACK)
+TRAPHANDLER(gp_trap, T_GPFLT)
+TRAPHANDLER(page_fault_trap, T_PGFLT)
+//TRAPHANDLER(reserved1_trap, 15)
+TRAPHANDLER_NOEC(floating_point_trap, T_FPERR)
+TRAPHANDLER(align_check_trap, T_ALIGN)
+TRAPHANDLER_NOEC(machine_check_trap, T_MCHK)
+TRAPHANDLER_NOEC(simd_trap, T_SIMDERR)
 
+// IRQ trap handlers
+TRAPHANDLER_NOEC(timer_trap, IRQ_OFFSET + 0)
+TRAPHANDLER_NOEC(kbd_trap, IRQ_OFFSET + 1)
+TRAPHANDLER_NOEC(irq2_trap, IRQ_OFFSET + 2)
+TRAPHANDLER_NOEC(irq3_trap, IRQ_OFFSET + 3)
+TRAPHANDLER_NOEC(serial_trap, IRQ_OFFSET + 4)
+TRAPHANDLER_NOEC(irq5_trap, IRQ_OFFSET + 5)
+TRAPHANDLER_NOEC(irq6_trap, IRQ_OFFSET + 6)
+TRAPHANDLER_NOEC(spurious_trap, IRQ_OFFSET + 7)
+TRAPHANDLER_NOEC(irq8_trap, IRQ_OFFSET + 8)
+TRAPHANDLER_NOEC(irq9_trap, IRQ_OFFSET + 9)
+TRAPHANDLER_NOEC(irq10_trap, IRQ_OFFSET + 10)
+TRAPHANDLER_NOEC(irq11_trap, IRQ_OFFSET + 11)
+TRAPHANDLER_NOEC(irq12_trap, IRQ_OFFSET + 12)
+TRAPHANDLER_NOEC(irq13_trap, IRQ_OFFSET + 13)
+TRAPHANDLER_NOEC(ide_trap, IRQ_OFFSET + 14)
+TRAPHANDLER_NOEC(irq15_trap, IRQ_OFFSET + 15)
 
+// for syscalls
+TRAPHANDLER_NOEC(syscall_trap, T_SYSCALL)
 
 /*
  * Lab 3: Your code here for _alltraps
  */
 
+// I should already be on the kernel stack right?
+_alltraps:
+    /* 
+     * Stack should already have:
+     *   - SS
+     *   - ESP
+     *   - EFLAGS
+     *   - CS
+     *   - EIP
+     *   - err (or 0 if trap doesn't do error codes)
+     */
+
+    // push ds, es
+    pushl %ds
+    pushl %es
+
+    // pushes a bunch of regs
+    pushal
+
+    // load GD_KD into ds, es
+    movw $GD_KD, %ax
+    movw %ax, %es
+    movw %ax, %ds
+
+    // pass Trapframe as a parameter to trap
+    pushl %esp
+    call trap
