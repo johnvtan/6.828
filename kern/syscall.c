@@ -365,7 +365,8 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
     if (e->env_ipc_recving != true) {
         return -E_IPC_NOT_RECV; 
     }
-    cprintf("send: got env %x\n", e->env_id);
+    assert(e->env_status == ENV_NOT_RUNNABLE);
+    //cprintf("send: got env %x\n", e->env_id);
 
     e->env_ipc_recving = 0;
     e->env_ipc_from = curenv->env_id;
@@ -374,6 +375,7 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
     e->env_status = ENV_RUNNABLE;
 
     // set return code from syscall to 0
+    // TODO there seems to be some code path here where sys_recv returns BUT eax doesn't get set to 0?
     e->env_tf.tf_regs.reg_eax = 0;
 
     // no page should be mapped
@@ -443,6 +445,7 @@ sys_ipc_recv(void *dstva)
     // set dstva to NULL in case recver doesn't want a page
     curenv->env_ipc_dstva = dstva; 
 
+    //cprintf("sys_ipc_recv: Env %x trying to recv\n", curenv->env_id);
     curenv->env_status = ENV_NOT_RUNNABLE;
     sched_yield();    
     panic("sys_ipc_recv: Returned into function????\n");
