@@ -370,48 +370,53 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
     e->env_ipc_recving = 0;
     e->env_ipc_from = curenv->env_id;
     e->env_ipc_value = value;
-    e->env_ipc_perm = perm;
+    e->env_ipc_perm = 0;
     e->env_status = ENV_RUNNABLE;
 
     // set return code from syscall to 0
     e->env_tf.tf_regs.reg_eax = 0;
 
-    // set virtual page mapping in dstva
-    if ((uintptr_t)srcva < UTOP && e->env_ipc_dstva != NULL) {
-        // if srcva isn't page aligned
-        if ((uintptr_t)srcva % PGSIZE != 0) {
-            return -E_INVAL;
-        }
-
-        // error if env tries to send a mapping to itself
-        if (curenv->env_id == envid) {
-            return -E_INVAL;
-        }
-        
-        // err if perm isn't right
-        if (perm & ~PTE_SYSCALL) {
-            return -E_INVAL;
-        }
-
-        // lookup page in curenv
-        pte_t *pte = NULL;
-        struct PageInfo *p = page_lookup(curenv->env_pgdir, srcva, &pte);   
-        if (p == NULL) {
-            return -E_INVAL;
-        }
-        assert(pte != NULL);
-
-        // check permissions in pte
-        if ((perm & PTE_W) & ~(*pte & PTE_W)) {
-            return -E_INVAL;
-        }
-
-        int err = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
-        if (err < 0) {
-            return -E_NO_MEM;
-        }
+    // no page should be mapped
+    if ((uintptr_t)e->env_ipc_dstva >= UTOP || (uintptr_t)srcva >= UTOP) {
+        return 0;
     }
 
+    // if we get here, we want to share a page mapping
+
+    // if srcva isn't page aligned
+    if ((uintptr_t)srcva % PGSIZE != 0) {
+        return -E_INVAL;
+    }
+
+    // error if env tries to send a mapping to itself
+    if (curenv->env_id == envid) {
+        return -E_INVAL;
+    }
+    
+    // err if perm isn't right
+    if (perm & ~PTE_SYSCALL) {
+        return -E_INVAL;
+    }
+
+    // lookup page in curenv
+    pte_t *pte = NULL;
+    struct PageInfo *p = page_lookup(curenv->env_pgdir, srcva, &pte);   
+    if (p == NULL) {
+        return -E_INVAL;
+    }
+    assert(pte != NULL);
+
+    // check permissions in pte
+    if ((perm & PTE_W) & ~(*pte & PTE_W)) {
+        return -E_INVAL;
+    }
+
+    err = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
+    if (err < 0) {
+        return -E_NO_MEM;
+    }
+
+    e->env_ipc_perm = perm; 
     return 0; 
 }
 
