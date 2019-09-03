@@ -355,7 +355,64 @@ static int
 sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 {
 	// LAB 4: Your code here.
-	panic("sys_ipc_try_send not implemented");
+    struct Env *e;
+    int err = envid2env(envid, &e, 0);
+    if (err < 0) {
+        return -E_BAD_ENV;
+    }
+    assert(e != NULL);
+
+    if (e->env_ipc_recving != true) {
+        return -E_IPC_NOT_RECV; 
+    }
+    cprintf("send: got env %x\n", e->env_id);
+
+    e->env_ipc_recving = 0;
+    e->env_ipc_from = curenv->env_id;
+    e->env_ipc_value = value;
+    e->env_ipc_perm = perm;
+    e->env_status = ENV_RUNNABLE;
+
+    // set return code from syscall to 0
+    e->env_tf.tf_regs.reg_eax = 0;
+
+    // set virtual page mapping in dstva
+    if ((uintptr_t)srcva < UTOP && e->env_ipc_dstva != NULL) {
+        // if srcva isn't page aligned
+        if ((uintptr_t)srcva % PGSIZE != 0) {
+            return -E_INVAL;
+        }
+
+        // error if env tries to send a mapping to itself
+        if (curenv->env_id == envid) {
+            return -E_INVAL;
+        }
+        
+        // err if perm isn't right
+        if (perm & ~PTE_SYSCALL) {
+            return -E_INVAL;
+        }
+
+        // lookup page in curenv
+        pte_t *pte = NULL;
+        struct PageInfo *p = page_lookup(curenv->env_pgdir, srcva, &pte);   
+        if (p == NULL) {
+            return -E_INVAL;
+        }
+        assert(pte != NULL);
+
+        // check permissions in pte
+        if ((perm & PTE_W) & ~(*pte & PTE_W)) {
+            return -E_INVAL;
+        }
+
+        int err = page_insert(e->env_pgdir, p, e->env_ipc_dstva, perm);
+        if (err < 0) {
+            return -E_NO_MEM;
+        }
+    }
+
+    return 0; 
 }
 
 // Block until a value is ready.  Record that you want to receive
@@ -372,9 +429,19 @@ sys_ipc_try_send(envid_t envid, uint32_t value, void *srcva, unsigned perm)
 static int
 sys_ipc_recv(void *dstva)
 {
+    if ((uintptr_t)dstva < UTOP && (uintptr_t)dstva % PGSIZE != 0) {
+        return -E_INVAL;
+    }
 	// LAB 4: Your code here.
-	panic("sys_ipc_recv not implemented");
-	return 0;
+    curenv->env_ipc_recving = 1;  
+
+    // set dstva to NULL in case recver doesn't want a page
+    curenv->env_ipc_dstva = dstva; 
+
+    curenv->env_status = ENV_NOT_RUNNABLE;
+    sched_yield();    
+    panic("sys_ipc_recv: Returned into function????\n");
+    return 0;
 }
 
 // Dispatches to the correct kernel function, passing the arguments.
@@ -409,6 +476,12 @@ syscall(uint32_t syscallno, uint32_t a1, uint32_t a2, uint32_t a3, uint32_t a4, 
             return sys_env_set_status(a1, a2);
         case SYS_env_set_pgfault_upcall:
             return sys_env_set_pgfault_upcall(a1, (void*)a2);
+        case SYS_ipc_try_send:
+            return sys_ipc_try_send(a1, a2, (void*)a3, a4);
+        case SYS_ipc_recv:
+            sys_ipc_recv((void*)a1);
+            panic("syscall: sys_ipc_recv shouldn't return!\n");
+            return 0;
         case SYS_yield:
             sys_yield();
             return 0;
