@@ -49,7 +49,7 @@ i386_init(void)
 	boot_aps();
 
 	// Start fs.
-	//ENV_CREATE(fs_fs, ENV_TYPE_FS);
+	ENV_CREATE(fs_fs, ENV_TYPE_FS);
     // create a bunch of idle envs so that other CPUs don't immediately halt
     //int i;
     //for (i = 0; i < NCPU; i++) {

@@ -437,8 +437,12 @@ env_create(uint8_t *binary, enum EnvType type)
 	// LAB 5: Your code here.
     struct Env *first_env = NULL;
     int err = env_alloc(&first_env, 0);
+
     if (err < 0) {
         panic("env_create error: Could not allocate new env, %e\n", err);
+    }
+    if (type == ENV_TYPE_FS) {
+        first_env->env_tf.tf_eflags |= FL_IOPL_3;
     }
     first_env->env_type = type;
     load_icode(first_env, binary);
