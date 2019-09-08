@@ -62,7 +62,20 @@ alloc_block(void)
 	// super->s_nblocks blocks in the disk altogether.
 
 	// LAB 5: Your code here.
-	panic("alloc_block not implemented");
+    if (super == NULL) {
+        panic("superblock not inited yet\n");
+    }
+    int blockno;
+    for (blockno = 0; blockno < super->s_nblocks; blockno++) {
+        if (block_is_free(blockno)) {
+            // allocate the block in the bitmap
+            bitmap[blockno/32] &= ~(1 << (blockno%32));
+
+            // get the blockno in the bitmap
+            flush_block(&bitmap[blockno/32]);
+            return blockno;
+        }
+    }
 	return -E_NO_DISK;
 }
 
@@ -134,8 +147,42 @@ fs_init(void)
 static int
 file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool alloc)
 {
-       // LAB 5: Your code here.
-       panic("file_block_walk not implemented");
+    if (filebno >= NDIRECT + NINDIRECT) {
+        return -E_INVAL;
+    }
+
+    if (filebno < NDIRECT) {
+        *ppdiskbno = &f->f_direct[filebno];
+        return 0;
+    }
+
+    // here, we have to handle the indirect case
+    if (f->f_indirect == 0) {
+        if (!alloc) {
+            // need to allocate indirect block, but alloc was 0
+            return -E_NOT_FOUND;
+        }
+
+        int blockno = alloc_block();
+        if (blockno < 0) {
+            return -E_NO_DISK;
+        }
+
+        // allocate indirect block
+        f->f_indirect = blockno;
+
+        // clear the newly allocated block
+        memset(diskaddr(f->f_indirect), 0, BLKSIZE);
+        flush_block(diskaddr(f->f_indirect));
+    }
+
+    // f->f_indirect is allocated
+    // calculate index into indirect block, which I think overflows into indirect block
+    // from direct
+    uint32_t indirect_bno = filebno - NDIRECT;
+    uint32_t *indirect_block = diskaddr(f->f_indirect);
+    *ppdiskbno = &indirect_block[indirect_bno];
+    return 0;
 }
 
 // Set *blk to the address in memory where the filebno'th
