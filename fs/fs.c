@@ -196,8 +196,29 @@ file_block_walk(struct File *f, uint32_t filebno, uint32_t **ppdiskbno, bool all
 int
 file_get_block(struct File *f, uint32_t filebno, char **blk)
 {
-       // LAB 5: Your code here.
-       panic("file_get_block not implemented");
+    if (filebno >= NDIRECT + NINDIRECT) {
+        return -E_INVAL;
+    }
+
+    uint32_t *disk_blockno = 0;
+    int err = file_block_walk(f, filebno, &disk_blockno, 1);
+    if (err < 0) {
+        return err;
+    }
+
+    // disk_blockno should now contain the block number or 0 if unallocated
+    if (*disk_blockno == 0) {
+        // if it's unallocated, try allocating a new block
+        int blockno = alloc_block();
+        if (blockno < 0) {
+            return -E_NO_DISK;
+        }
+        *disk_blockno = blockno;
+    }
+
+    // by the time we get here, disk_blockno should be valid (ie, nonzero)
+    *blk = diskaddr(*disk_blockno);
+    return 0;
 }
 
 // Try to find a file named "name" in dir.  If so, set *file to it.
@@ -218,10 +239,16 @@ dir_lookup(struct File *dir, const char *name, struct File **file)
 	assert((dir->f_size % BLKSIZE) == 0);
 	nblock = dir->f_size / BLKSIZE;
 	for (i = 0; i < nblock; i++) {
-		if ((r = file_get_block(dir, i, &blk)) < 0)
+        // iterate through the blocks in this directory 
+        if ((r = file_get_block(dir, i, &blk)) < 0) {
+            cprintf("Failed to get block in dir lookup: %s\n", name);
+            cprintf("blockno: %u err: %e\n", i, r);
 			return r;
+        }
+        // the returned block is a list of file structs
 		f = (struct File*) blk;
 		for (j = 0; j < BLKFILES; j++)
+            // compare the name of each file with the name we're searching for
 			if (strcmp(f[j].f_name, name) == 0) {
 				*file = &f[j];
 				return 0;
@@ -242,6 +269,9 @@ dir_alloc_file(struct File *dir, struct File **file)
 
 	assert((dir->f_size % BLKSIZE) == 0);
 	nblock = dir->f_size / BLKSIZE;
+
+    // similar to dir_lookup except we look for the name '/0', which means it's
+    // unallocated
 	for (i = 0; i < nblock; i++) {
 		if ((r = file_get_block(dir, i, &blk)) < 0)
 			return r;
@@ -252,9 +282,12 @@ dir_alloc_file(struct File *dir, struct File **file)
 				return 0;
 			}
 	}
+
+    // if all of the files are allocated, then allocate a new block
 	dir->f_size += BLKSIZE;
 	if ((r = file_get_block(dir, i, &blk)) < 0)
 		return r;
+    // and allocate the first file in that block
 	f = (struct File*) blk;
 	*file = &f[0];
 	return 0;
