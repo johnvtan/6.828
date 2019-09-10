@@ -78,21 +78,30 @@ pgfault(struct UTrapframe *utf)
 static int
 duppage(envid_t envid, unsigned pn)
 {
-	// LAB 4: Your code here.
-
+    void *va = (void*)(pn * PGSIZE);
     int perm = PTE_U | PTE_P;
+    int err;
+
+    // only copy page mapping if shared
+    if (uvpt[pn] & PTE_SHARE) {
+        err = sys_page_map(0, va, envid, va, uvpt[pn] & PTE_SYSCALL);
+        if (err < 0) {
+            panic("duppage: Failed trying to sys_page_map (PTE_SHARE)");
+        }
+        return 0;
+    }
+
+    // here, page isn't shared
     if (uvpt[pn] & PTE_W || uvpt[pn] & PTE_COW) {
         perm |= PTE_COW;
     }
 
-    void *va = (void*)(pn * PGSIZE);
-    int err = sys_page_map(0, va, envid, va, perm);
+    err = sys_page_map(0, va, envid, va, perm);
     if (err < 0) {
         panic("duppage: Failed trying to sys_page_map - %e\n", err);
     }
 
     if (perm & PTE_COW) {
-        // TODO - is this how I update permissions?
         err = sys_page_map(0, va, 0, va, perm); 
         if (err < 0) {
             panic("duppage: Failed trying to remap page as COW - %e\n", err);
