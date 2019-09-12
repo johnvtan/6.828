@@ -49,12 +49,18 @@ i386_init(void)
 
 	// Acquire the big kernel lock before waking up APs
 	// Your code here:
+    lock_kernel();
 
 	// Starting non-boot CPUs
 	boot_aps();
 
 	// Start fs.
 	ENV_CREATE(fs_fs, ENV_TYPE_FS);
+    // create a bunch of idle envs so that other CPUs don't immediately halt
+    //int i;
+    //for (i = 0; i < NCPU; i++) {
+    //    ENV_CREATE(user_idle, ENV_TYPE_USER);
+    //}
 
 #if !defined(TEST_NO_NS)
 	// Start ns.
@@ -66,7 +72,7 @@ i386_init(void)
 	ENV_CREATE(TEST, ENV_TYPE_USER);
 #else
 	// Touch all you want.
-	ENV_CREATE(user_icode, ENV_TYPE_USER);
+	ENV_CREATE(user_spawnhello, ENV_TYPE_USER);
 #endif // TEST*
 
 	// Should not be necessary - drains keyboard because interrupt has given up.
@@ -124,11 +130,11 @@ mp_main(void)
 	// Now that we have finished some basic setup, call sched_yield()
 	// to start running processes on this CPU.  But make sure that
 	// only one CPU can enter the scheduler at a time!
-	//
 	// Your code here:
 
-	// Remove this after you finish Exercise 6
-	for (;;);
+    // lock the kernel and start a user env
+    lock_kernel();
+    sched_yield();
 }
 
 /*

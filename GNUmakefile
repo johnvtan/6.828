@@ -126,8 +126,8 @@ all:
 	   $(OBJDIR)/lib/%.o $(OBJDIR)/fs/%.o $(OBJDIR)/net/%.o \
 	   $(OBJDIR)/user/%.o
 
-KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -gstabs
-USER_CFLAGS := $(CFLAGS) -DJOS_USER -gstabs
+KERN_CFLAGS := $(CFLAGS) -DJOS_KERNEL -gstabs -O0
+USER_CFLAGS := $(CFLAGS) -DJOS_USER -gstabs -O0
 
 # Update .vars.X if variable X has changed since the last make run.
 #
@@ -168,7 +168,7 @@ QEMUOPTS += $(QEMUEXTRA)
 	sed "s/localhost:1234/localhost:$(GDBPORT)/" < $^ > $@
 
 gdb:
-	$(GDB) -n -x .gdbinit
+	$(GDB) --command=debug.gdb 
 
 pre-qemu: .gdbinit
 #	QEMU doesn't truncate the pcap file.  Work around this.
@@ -323,6 +323,7 @@ myapi.key:
 prep-net_%: override INIT_CFLAGS+=-DTEST_NO_NS
 
 prep-%:
+	@echo $(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
 	$(V)$(MAKE) "INIT_CFLAGS=${INIT_CFLAGS} -DTEST=`case $* in *_*) echo $*;; *) echo user_$*;; esac`" $(IMAGES)
 
 run-%-nox-gdb: prep-% pre-qemu

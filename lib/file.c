@@ -141,7 +141,23 @@ devfile_write(struct Fd *fd, const void *buf, size_t n)
 	// remember that write is always allowed to write *fewer*
 	// bytes than requested.
 	// LAB 5: Your code here
-	panic("devfile_write not implemented");
+
+    // cap n to be size of the buffer
+    if (n > PGSIZE - (sizeof(int) + sizeof(size_t))) {
+        n = PGSIZE - (sizeof(int) + sizeof(size_t));
+    }
+    fsipcbuf.write.req_fileid = fd->fd_file.id;
+    fsipcbuf.write.req_n = n;
+
+    // copy the data in buf over to the ipc page
+    memcpy(fsipcbuf.write.req_buf, buf, n);
+    int err = fsipc(FSREQ_WRITE, NULL);
+    if (err < 0) {
+        return err;
+    }
+    assert(err <= n);
+    return err;
+
 }
 
 static int
